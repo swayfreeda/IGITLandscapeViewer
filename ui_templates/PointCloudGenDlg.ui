@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PointCloudGenDlg</class>
+ <widget class="QDialog" name="PointCloudGenDlg">
+  <property name="windowModality">
+   <enum>Qt::ApplicationModal</enum>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>点云生成</string>
+  </property>
+  <property name="sizeGripEnabled">
+   <bool>false</bool>
+  </property>
+  <property name="modal">
+   <bool>false</bool>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QPushButton" name="pushButtonLoadImgs">
+       <property name="text">
+        <string>加载图像</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../mainwindow.qrc">
+         <normaloff>:/MainWindow/images/ccPlus.png</normaloff>:/MainWindow/images/ccPlus.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonStartReconstruction">
+       <property name="text">
+        <string>开始重建</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../mainwindow.qrc">
+         <normaloff>:/MainWindow/images/dbCloudSymbol.png</normaloff>:/MainWindow/images/dbCloudSymbol.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QListWidget" name="listWidgetImgList">
+     <property name="mouseTracking">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="Line" name="line">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../mainwindow.qrc"/>
+ </resources>
+ <connections/>
+</ui>

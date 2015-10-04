@@ -1,0 +1,586 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindowClass</class>
+ <widget class="QMainWindow" name="MainWindowClass">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>891</width>
+    <height>602</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="baseSize">
+   <size>
+    <width>800</width>
+    <height>600</height>
+   </size>
+  </property>
+  <property name="focusPolicy">
+   <enum>Qt::ClickFocus</enum>
+  </property>
+  <property name="windowTitle">
+   <string>IGIT地形地物三维模型重建与可视化</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="../mainwindow.qrc">
+    <normaloff>:/MainWindow/images/icon/cc_icon_16.png</normaloff>:/MainWindow/images/icon/cc_icon_16.png</iconset>
+  </property>
+  <property name="autoFillBackground">
+   <bool>true</bool>
+  </property>
+  <widget class="QWidget" name="centralWidget"/>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>891</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>文件(&amp;F)</string>
+    </property>
+    <addaction name="actionOpen"/>
+    <addaction name="actionSave"/>
+    <addaction name="separator"/>
+    <addaction name="actionCloseAll"/>
+    <addaction name="actionQuit"/>
+   </widget>
+   <widget class="QMenu" name="menuEdit">
+    <property name="title">
+     <string>编辑(&amp;E)</string>
+    </property>
+    <widget class="QMenu" name="menuSensors">
+     <property name="title">
+      <string>传感器</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../mainwindow.qrc">
+       <normaloff>:/MainWindow/images/dbCamSensorSymbol.png</normaloff>:/MainWindow/images/dbCamSensorSymbol.png</iconset>
+     </property>
+     <widget class="QMenu" name="menuCameraSensor">
+      <property name="title">
+       <string>相机</string>
+      </property>
+      <addaction name="actionCreateCameraSensor"/>
+      <addaction name="actionCreateCameraSensorFromFile"/>
+      <addaction name="actionCheckPointsInsideFrustrum"/>
+     </widget>
+     <addaction name="menuCameraSensor"/>
+    </widget>
+    <addaction name="menuSensors"/>
+    <addaction name="actionTextureGeneration"/>
+   </widget>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>工具(&amp;T)</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuDisplay">
+    <property name="title">
+     <string>显示(&amp;D)</string>
+    </property>
+    <addaction name="actionEditCamera"/>
+    <addaction name="actionLockRotationVertAxis"/>
+   </widget>
+   <widget class="QMenu" name="menu3DViews">
+    <property name="title">
+     <string>视角(&amp;V)</string>
+    </property>
+    <addaction name="actionNew3DView"/>
+    <addaction name="separator"/>
+    <addaction name="actionClose3DView"/>
+    <addaction name="actionCloseAll3DViews"/>
+    <addaction name="separator"/>
+    <addaction name="actionTile3DViews"/>
+    <addaction name="actionCascade3DViews"/>
+    <addaction name="separator"/>
+    <addaction name="actionNext3DView"/>
+    <addaction name="actionPrevious3DView"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>帮助(&amp;H)</string>
+    </property>
+    <addaction name="actionDebug"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuEdit"/>
+   <addaction name="menuTools"/>
+   <addaction name="menuDisplay"/>
+   <addaction name="menu3DViews"/>
+   <addaction name="menuHelp"/>
+  </widget>
+  <widget class="QToolBar" name="toolBarMainTools">
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionOpen"/>
+   <addaction name="actionSave"/>
+   <addaction name="actionTextureGeneration"/>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+  <widget class="QToolBar" name="toolBarView">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>LeftToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionEditCamera"/>
+   <addaction name="actionSetViewTop"/>
+   <addaction name="actionSetViewBottom"/>
+   <addaction name="actionSetViewRight"/>
+   <addaction name="actionSetViewLeft"/>
+   <addaction name="actionSetViewFront"/>
+   <addaction name="actionSetViewBack"/>
+   <addaction name="actionSetViewIso2"/>
+   <addaction name="actionSetViewIso1"/>
+  </widget>
+  <widget class="QDockWidget" name="DockableDBTree">
+   <property name="minimumSize">
+    <size>
+     <width>176</width>
+     <height>155</height>
+    </size>
+   </property>
+   <property name="windowIcon">
+    <iconset>
+     <normaloff>:/IGITLandscapeViewer/cc_icon_16.png</normaloff>:/IGITLandscapeViewer/cc_icon_16.png</iconset>
+   </property>
+   <property name="floating">
+    <bool>false</bool>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="windowTitle">
+    <string>场景列表</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents">
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <item>
+      <widget class="ccCustomQTreeView" name="dbTreeView">
+       <property name="dragEnabled">
+        <bool>true</bool>
+       </property>
+       <property name="selectionMode">
+        <enum>QAbstractItemView::ExtendedSelection</enum>
+       </property>
+       <property name="uniformRowHeights">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="groupBox">
+       <property name="title">
+        <string/>
+       </property>
+       <layout class="QVBoxLayout" name="_2">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>3</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>3</number>
+        </property>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <spacer name="spacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="checkBoxCameraLink">
+            <property name="text">
+             <string>相机联动</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="DockableProperties">
+   <property name="minimumSize">
+    <size>
+     <width>100</width>
+     <height>116</height>
+    </size>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="windowTitle">
+    <string>属性</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="widget_2">
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <item>
+      <widget class="QTreeView" name="propertiesTreeView"/>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="DockableConsole">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Ignored" vsizetype="Maximum">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetFloatable</set>
+   </property>
+   <property name="windowTitle">
+    <string>控制台</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>8</number>
+   </attribute>
+   <widget class="QWidget" name="widget">
+    <layout class="QVBoxLayout" name="verticalLayout_3">
+     <item>
+      <widget class="QListWidget" name="consoleWidget"/>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <action name="actionOpen">
+   <property name="icon">
+    <iconset resource="../mainwindow.qrc">
+     <normaloff>:/MainWindow/images/ccOpen.png</normaloff>:/MainWindow/images/ccOpen.png</iconset>
+   </property>
+   <property name="text">
+    <string>打开</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="actionSave">
+   <property name="icon">
+    <iconset resource="../mainwindow.qrc">
+     <normaloff>:/MainWindow/images/ccSave.png</normaloff>:/MainWindow/images/ccSave.png</iconset>
+   </property>
+   <property name="text">
+    <string>保存</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionQuit">
+   <property name="text">
+    <string>退出</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
+  </action>
+  <action name="actionNew3DView">
+   <property name="text">
+    <string>新建</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+F3</string>
+   </property>
+  </action>
+  <action name="actionClose3DView">
+   <property name="text">
+    <string>关闭</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+F4</string>
+   </property>
+  </action>
+  <action name="actionCloseAll3DViews">
+   <property name="text">
+    <string>关闭所有</string>
+   </property>
+  </action>
+  <action name="actionTile3DViews">
+   <property name="text">
+    <string>平铺</string>
+   </property>
+  </action>
+  <action name="actionCascade3DViews">
+   <property name="text">
+    <string>层叠</string>
+   </property>
+  </action>
+  <action name="actionNext3DView">
+   <property name="text">
+    <string>下一个</string>
+   </property>
+  </action>
+  <action name="actionPrevious3DView">
+   <property name="text">
+    <string>上一个</string>
+   </property>
+  </action>
+  <action name="actionCloseAll">
+   <property name="text">
+    <string>清除全部</string>
+   </property>
+  </action>
+  <action name="actionSetViewTop">
+   <property name="icon">
+    <iconset resource="../mainwindow.qrc">
+     <normaloff>:/MainWindow/images/ccViewZpos.png</normaloff>:/MainWindow/images/ccViewZpos.png</iconset>
+   </property>
+   <property name="text">
+    <string>俯视</string>
+   </property>
+   <property name="shortcut">
+    <string>3</string>
+   </property>
+  </action>
+  <action name="actionSetViewFront">
+   <property name="icon">
+    <iconset resource="../mainwindow.qrc">
+     <normaloff>:/MainWindow/images/ccViewYpos.png</normaloff>:/MainWindow/images/ccViewYpos.png</iconset>
+   </property>
+   <property name="text">
+    <string>前视图</string>
+   </property>
+   <property name="shortcut">
+    <string>7</string>
+   </property>
+  </action>
+  <action name="actionSetViewLeft">
+   <property name="icon">
+    <iconset resource="../mainwindow.qrc">
+     <normaloff>:/MainWindow/images/ccViewXpos.png</normaloff>:/MainWindow/images/ccViewXpos.png</iconset>
+   </property>
+   <property name="text">
+    <string>左视图 </string>
+   </property>
+   <property name="shortcut">
+    <string>6</string>
+   </property>
+  </action>
+  <action name="actionSetViewRight">
+   <property name="icon">
+    <iconset resource="../mainwindow.qrc">
+     <normaloff>:/MainWindow/images/ccViewXneg.png</normaloff>:/MainWindow/images/ccViewXneg.png</iconset>
+   </property>
+   <property name="text">
+    <string>右视图</string>
+   </property>
+   <property name="shortcut">
+    <string>5</string>
+   </property>
+  </action>
+  <action name="actionSetViewBottom">
+   <property name="icon">
+    <iconset resource="../mainwindow.qrc">
+     <normaloff>:/MainWindow/images/ccViewZneg.png</normaloff>:/MainWindow/images/ccViewZneg.png</iconset>
+   </property>
+   <property name="text">
+    <string>仰视图</string>
+   </property>
+   <property name="shortcut">
+    <string>4</string>
+   </property>
+  </action>
+  <action name="actionSetViewBack">
+   <property name="icon">
+    <iconset resource="../mainwindow.qrc">
+     <normaloff>:/MainWindow/images/ccViewYneg.png</normaloff>:/MainWindow/images/ccViewYneg.png</iconset>
+   </property>
+   <property name="text">
+    <string>后视图</string>
+   </property>
+   <property name="shortcut">
+    <string>8</string>
+   </property>
+  </action>
+  <action name="actionSetViewIso1">
+   <property name="icon">
+    <iconset resource="../mainwindow.qrc">
+     <normaloff>:/MainWindow/images/ccViewIso1.png</normaloff>:/MainWindow/images/ccViewIso1.png</iconset>
+   </property>
+   <property name="text">
+    <string>ISO视角一</string>
+   </property>
+   <property name="shortcut">
+    <string>1</string>
+   </property>
+  </action>
+  <action name="actionSetViewIso2">
+   <property name="icon">
+    <iconset resource="../mainwindow.qrc">
+     <normaloff>:/MainWindow/images/ccViewIso2.png</normaloff>:/MainWindow/images/ccViewIso2.png</iconset>
+   </property>
+   <property name="text">
+    <string>ISO视角二</string>
+   </property>
+   <property name="shortcut">
+    <string>2</string>
+   </property>
+  </action>
+  <action name="actionSetOrthoView">
+   <property name="icon">
+    <iconset resource="../mainwindow.qrc">
+     <normaloff>:/MainWindow/images/ccOrthoMode32.png</normaloff>:/MainWindow/images/ccOrthoMode32.png</iconset>
+   </property>
+   <property name="text">
+    <string>正视投影</string>
+   </property>
+  </action>
+  <action name="actionSetCenteredPerspectiveView">
+   <property name="icon">
+    <iconset resource="../mainwindow.qrc">
+     <normaloff>:/MainWindow/images/ccCenteredPerspective32.png</normaloff>:/MainWindow/images/ccCenteredPerspective32.png</iconset>
+   </property>
+   <property name="text">
+    <string>透视投影(物体为中心)</string>
+   </property>
+  </action>
+  <action name="actionSetViewerPerspectiveView">
+   <property name="icon">
+    <iconset resource="../mainwindow.qrc">
+     <normaloff>:/MainWindow/images/ccViewerBasedPerspective32.png</normaloff>:/MainWindow/images/ccViewerBasedPerspective32.png</iconset>
+   </property>
+   <property name="text">
+    <string>透视投影(观察者为中心）</string>
+   </property>
+  </action>
+  <action name="actionSetPivotAlwaysOn">
+   <property name="icon">
+    <iconset resource="../mainwindow.qrc">
+     <normaloff>:/MainWindow/images/ccPivotOn.png</normaloff>:/MainWindow/images/ccPivotOn.png</iconset>
+   </property>
+   <property name="text">
+    <string>始终可见</string>
+   </property>
+  </action>
+  <action name="actionSetPivotRotationOnly">
+   <property name="icon">
+    <iconset resource="../mainwindow.qrc">
+     <normaloff>:/MainWindow/images/ccPivotAuto.png</normaloff>:/MainWindow/images/ccPivotAuto.png</iconset>
+   </property>
+   <property name="text">
+    <string>仅旋转可见</string>
+   </property>
+  </action>
+  <action name="actionSetPivotOff">
+   <property name="icon">
+    <iconset resource="../mainwindow.qrc">
+     <normaloff>:/MainWindow/images/ccPivotOff.png</normaloff>:/MainWindow/images/ccPivotOff.png</iconset>
+   </property>
+   <property name="text">
+    <string>始终不可见</string>
+   </property>
+  </action>
+  <action name="actionLockRotationVertAxis">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>锁定旋转轴（Y轴）</string>
+   </property>
+   <property name="shortcut">
+    <string>L, Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionEditCamera">
+   <property name="icon">
+    <iconset resource="../mainwindow.qrc">
+     <normaloff>:/MainWindow/images/ccCamera.png</normaloff>:/MainWindow/images/ccCamera.png</iconset>
+   </property>
+   <property name="text">
+    <string>相机参数设置</string>
+   </property>
+  </action>
+  <action name="actionCreateCameraSensor">
+   <property name="icon">
+    <iconset resource="../mainwindow.qrc">
+     <normaloff>:/MainWindow/images/dbCamSensorSymbol.png</normaloff>:/MainWindow/images/dbCamSensorSymbol.png</iconset>
+   </property>
+   <property name="text">
+    <string>创建</string>
+   </property>
+  </action>
+  <action name="actionCheckPointsInsideFrustrum">
+   <property name="text">
+    <string>计算可视性</string>
+   </property>
+  </action>
+  <action name="actionCreateCameraSensorFromFile">
+   <property name="text">
+    <string>从文件中创建</string>
+   </property>
+  </action>
+  <action name="actionTextureGeneration">
+   <property name="icon">
+    <iconset resource="../mainwindow.qrc">
+     <normaloff>:/MainWindow/images/dbCloudSymbol.png</normaloff>:/MainWindow/images/dbCloudSymbol.png</iconset>
+   </property>
+   <property name="text">
+    <string>纹理模型生成</string>
+   </property>
+  </action>
+  <action name="actionDebug">
+   <property name="text">
+    <string>Debug</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>ccCustomQTreeView</class>
+   <extends>QTreeView</extends>
+   <header location="global">ccDBRoot.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="../mainwindow.qrc"/>
+ </resources>
+ <connections/>
+</ui>

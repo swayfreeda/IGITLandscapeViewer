@@ -1,0 +1,31 @@
+<RCC>
+  <qresource prefix="/MainWindow">
+    <file>images/smallValidate.png</file>
+    <file>images/dbCloudSymbol.png</file>
+    <file>images/ccSampleCloud.png</file>
+    <file>images/dbCamSensorSymbol.png</file>
+    <file>images/smallRevert.png</file>
+    <file>images/ccPointPicking.png</file>
+    <file>images/smallBasket.png</file>
+    <file>images/ccCamera.png</file>
+    <file>images/icon/cc_icon_16.png</file>
+    <file>images/ccPivotOff.png</file>
+    <file>images/ccPivotAuto.png</file>
+    <file>images/ccPivotOn.png</file>
+    <file>images/ccViewerBasedPerspective32.png</file>
+    <file>images/ccCenteredPerspective32.png</file>
+    <file>images/ccOrthoMode32.png</file>
+    <file>images/ccViewIso2.png</file>
+    <file>images/ccViewIso1.png</file>
+    <file>images/ccViewZneg.png</file>
+    <file>images/ccViewYneg.png</file>
+    <file>images/ccViewXneg.png</file>
+    <file>images/ccViewXpos.png</file>
+    <file>images/ccViewYpos.png</file>
+    <file>images/ccViewZpos.png</file>
+    <file>images/ccSave.png</file>
+    <file>images/ccOpen.png</file>
+    <file>images/ccMinus.png</file>
+    <file>images/ccPlus.png</file>
+  </qresource>
+</RCC>

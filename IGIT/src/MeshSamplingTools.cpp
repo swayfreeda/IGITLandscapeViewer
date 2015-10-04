@@ -1,0 +1,420 @@
+//##########################################################################
+//#                                                                        #
+//#                               CCLIB                                    #
+//#                                                                        #
+//#  This program is free software; you can redistribute it and/or modify  #
+//#  it under the terms of the GNU Library General Public License as       #
+//#  published by the Free Software Foundation; version 2 of the License.  #
+//#                                                                        #
+//#  This program is distributed in the hope that it will be useful,       #
+//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
+//#  GNU General Public License for more details.                          #
+//#                                                                        #
+//#          COPYRIGHT: EDF R&D / TELECOM ParisTech (ENST-TSI)             #
+//#                                                                        #
+//##########################################################################
+
+#include "MeshSamplingTools.h"
+
+//local
+#include "GenericProgressCallback.h"
+#include "GenericIndexedCloud.h"
+#include "GenericIndexedMesh.h"
+#include "GenericMesh.h"
+#include "ScalarField.h"
+#include "SimpleCloud.h"
+#include "CCConst.h"
+#include "CCGeom.h"
+
+//system
+#include <assert.h>
+
+using namespace CCLib;
+
+double MeshSamplingTools::computeMeshArea(GenericMesh* mesh)
+{
+	if (!mesh)
+	{
+		assert(false);
+		return -1.0;
+	}
+
+	//total area
+	double Stotal = 0.0;
+
+	mesh->placeIteratorAtBegining();
+	for (unsigned n=0; n<mesh->size(); ++n)
+	{
+		GenericTriangle* tri = mesh->_getNextTriangle();
+
+		//vertices
+		const CCVector3* O = tri->_getA();
+		const CCVector3* A = tri->_getB();
+		const CCVector3* B = tri->_getC();
+
+		//compute the area of the triangle (= half of the vector product norm)
+		CCVector3 OA = *A - *O;
+		CCVector3 OB = *B - *O;
+		Stotal += OA.cross(OB).norm();
+	}
+
+	return Stotal / 2;
+}
+
+double MeshSamplingTools::computeMeshVolume(GenericMesh* mesh)
+{
+	if (!mesh)
+	{
+		assert(false);
+		return -1.0;
+	}
+
+	//total volume
+	double Vtotal = 0.0;
+
+	CCVector3 origin,upperCorner;
+	mesh->getBoundingBox(origin.u,upperCorner.u);
+
+	mesh->placeIteratorAtBegining();
+	for (unsigned n=0; n<mesh->size(); ++n)
+	{
+		GenericTriangle* tri = mesh->_getNextTriangle();
+
+		//vertices (expressed in the local mesh ref. so as to avoid numerical inaccuracies)
+		const CCVector3 A = *tri->_getA() - origin;
+		const CCVector3 B = *tri->_getB() - origin;
+		const CCVector3 C = *tri->_getC() - origin;
+
+		//see "EFFICIENT FEATURE EXTRACTION FOR 2D/3D OBJECTS IN MESH REPRESENTATION" by Cha Zhang and Tsuhan Chen (2001)
+		//We compute the (signed) volume of the tetrahedron defined by each triangle and the origin
+		double signedVol = (-static_cast<double>(C.x*B.y*A.z)
+							+static_cast<double>(B.x*C.y*A.z)
+							+static_cast<double>(C.x*A.y*B.z)
+							-static_cast<double>(A.x*C.y*B.z)
+							-static_cast<double>(B.x*A.y*C.z)
+							+static_cast<double>(A.x*B.y*C.z))/6.0;
+
+		Vtotal += signedVol;
+	}
+
+	return fabs(Vtotal); //in case the triangles are in the wrong order!
+}
+
+unsigned long long MeshSamplingTools::ComputeEdgeKey(unsigned i1, unsigned i2)
+{
+	//build unique index
+	if (i1 > i2)
+		std::swap(i1,i2);
+	return ((static_cast<unsigned long long>(i2) << 32) | static_cast<unsigned long long>(i1));
+}
+
+void MeshSamplingTools::DecodeEdgeKey(unsigned long long key, unsigned& i1, unsigned& i2)
+{
+	i1 = static_cast<unsigned>(  key        & 0x00000000FFFFFFFF );
+	i2 = static_cast<unsigned>( (key >> 32) & 0x00000000FFFFFFFF );
+}
+
+bool MeshSamplingTools::buildMeshEdgeUsageMap(GenericIndexedMesh* mesh, EdgeUsageMap& edgeMap)
+{
+	edgeMap.clear();
+
+	if (!mesh)
+		return false;
+
+	try
+	{
+		mesh->placeIteratorAtBegining();
+		//for all triangles
+		for (unsigned n=0; n<mesh->size(); ++n)
+		{
+			TriangleSummitsIndexes* tri = mesh->getNextTriangleIndexes();
+
+			//for all edges
+			for (unsigned j=0; j<3; ++j)
+			{
+				unsigned i1 = tri->i[j];
+				unsigned i2 = tri->i[(j+1) % 3];
+				//build unique index
+				unsigned long long edgeKey = ComputeEdgeKey(i1,i2);
+				++edgeMap[edgeKey];
+			}
+		}
+	}
+	catch(std::bad_alloc)
+	{
+		//not enough memory
+		return false;
+	}
+
+	return true;
+}
+
+bool MeshSamplingTools::computeMeshEdgesConnectivity(GenericIndexedMesh* mesh, EdgeConnectivityStats& stats)
+{
+	stats = EdgeConnectivityStats();
+
+	if (!mesh)
+		return false;
+
+	//count the number of triangles using each edge
+	EdgeUsageMap edgeCounters;
+	if (!buildMeshEdgeUsageMap(mesh,edgeCounters))
+		return false;
+
+	//for all edges
+	stats.edgesCount = static_cast<unsigned>(edgeCounters.size());
+	for (std::map<unsigned long long, unsigned>::const_iterator edgeIt = edgeCounters.begin(); edgeIt != edgeCounters.end(); ++edgeIt)
+	{
+		assert(edgeIt->second != 0);
+		if (edgeIt->second == 1)
+			++stats.edgesNotShared;
+		else if (edgeIt->second == 2)
+			++stats.edgesSharedByTwo;
+		else
+			++stats.edgesSharedByMore;
+	}
+
+	return true;
+}
+
+bool MeshSamplingTools::flagMeshVerticesByType(GenericIndexedMesh* mesh, ScalarField* flags, EdgeConnectivityStats* stats/*=0*/)
+{
+	if (!mesh || !flags || flags->currentSize() == 0)
+		return false;
+
+	//'non-processed' flag
+	flags->fill(NAN_VALUE);
+
+	//count the number of triangles using each edge
+	EdgeUsageMap edgeCounters;
+	if (!buildMeshEdgeUsageMap(mesh,edgeCounters))
+		return false;
+
+	//now scan all the edges and flag their vertices
+	{
+		if (stats)
+			stats->edgesCount = static_cast<unsigned>(edgeCounters.size());
+
+		//for all edges
+		for (std::map<unsigned long long, unsigned>::const_iterator edgeIt = edgeCounters.begin(); edgeIt != edgeCounters.end(); ++edgeIt)
+		{
+			unsigned i1, i2;
+			DecodeEdgeKey(edgeIt->first, i1, i2);
+
+			ScalarType flag = NAN_VALUE;
+			if (edgeIt->second == 1)
+			{
+				//only one triangle uses this edge
+				flag = static_cast<ScalarType>(VERTEX_BORDER);
+				if (stats)
+					++stats->edgesNotShared;
+			}
+			else if (edgeIt->second == 2)
+			{
+				//two triangles use this edge
+				flag = static_cast<ScalarType>(VERTEX_NORMAL);
+				if (stats)
+					++stats->edgesSharedByTwo;
+			}
+			else if (edgeIt->second > 2)
+			{
+				//more than two triangles use this edge!
+				flag = static_cast<ScalarType>(VERTEX_NON_MANIFOLD);
+				if (stats)
+					++stats->edgesSharedByMore;
+			}
+			//else --> isolated vertex?
+
+			flags->setValue(i1,flag);
+			flags->setValue(i2,flag);
+		}
+	}
+
+	flags->computeMinAndMax();
+
+	return true;
+}
+
+SimpleCloud* MeshSamplingTools::samplePointsOnMesh(	GenericMesh* mesh,
+													unsigned numberOfPoints,
+													GenericProgressCallback* progressCb/*=0*/,
+													GenericChunkedArray<1,unsigned>* triIndices/*=0*/)
+{
+	if (!mesh)
+        return 0;
+
+	//total mesh surface
+	double Stotal = computeMeshArea(mesh);
+
+	if (Stotal < ZERO_TOLERANCE)
+        return 0;
+
+	double samplingDensity = double(numberOfPoints)/Stotal;
+
+    //no normal needs to be computed here
+	return samplePointsOnMesh(mesh,samplingDensity,numberOfPoints,progressCb,triIndices);
+}
+
+SimpleCloud* MeshSamplingTools::samplePointsOnMesh(	GenericMesh* mesh,
+													double samplingDensity,
+													GenericProgressCallback* progressCb/*=0*/,
+													GenericChunkedArray<1,unsigned>* triIndices/*=0*/)
+{
+	if (!mesh)
+        return 0;
+
+	//on commence par calculer la surface totale
+	double Stotal = computeMeshArea(mesh);
+
+	unsigned theoricNumberOfPoints = unsigned(Stotal * samplingDensity);
+
+	return samplePointsOnMesh(mesh,samplingDensity,theoricNumberOfPoints,progressCb,triIndices);
+}
+
+SimpleCloud* MeshSamplingTools::samplePointsOnMesh(GenericMesh* mesh,
+													double samplingDensity,
+													unsigned theoricNumberOfPoints,
+													GenericProgressCallback* progressCb,
+													GenericChunkedArray<1,unsigned>* triIndices/*=0*/)
+{
+	assert(mesh);
+	unsigned triCount = (mesh ? mesh->size() : 0);
+	if (triCount == 0)
+		return 0;
+
+	if (theoricNumberOfPoints < 1)
+        return 0;
+
+
+	SimpleCloud* sampledCloud = new SimpleCloud();
+	if (!sampledCloud->reserve(theoricNumberOfPoints)) //not enough memory
+	{
+		delete sampledCloud;
+		return 0;
+	}
+
+	if (triIndices)
+	{
+	    triIndices->clear();
+		//not enough memory? DGM TODO: we should warn the caller
+		if (!triIndices->reserve(theoricNumberOfPoints) || triIndices->capacity() < theoricNumberOfPoints)
+		{
+			delete sampledCloud;
+			triIndices->clear();
+			return 0;
+		}
+	}
+
+	NormalizedProgress* normProgress=0;
+    if (progressCb)
+    {
+		normProgress = new NormalizedProgress(progressCb,triCount);
+		progressCb->setMethodTitle("Mesh sampling");
+		char buffer[256];
+		sprintf(buffer,"Triangles: %u\nPoints: %u",triCount,theoricNumberOfPoints);
+		progressCb->setInfo(buffer);
+        progressCb->reset();
+		progressCb->start();
+	}
+
+	unsigned addedPoints = 0;
+
+	//for each triangle
+	mesh->placeIteratorAtBegining();
+	for (unsigned n=0; n<triCount; ++n)
+	{
+		const GenericTriangle* tri = mesh->_getNextTriangle();
+
+		//vertices (OAB)
+		const CCVector3 *O = tri->_getA();
+		const CCVector3 *A = tri->_getB();
+		const CCVector3 *B = tri->_getC();
+
+		//edges (OA and OB)
+		CCVector3 u = *A - *O;
+		CCVector3 v = *B - *O;
+
+		//we compute the (twice) the triangle area
+		CCVector3 N = u.cross(v);
+		double S = N.norm()/2.0;
+
+		//we deduce the number of points to generate on this face
+		double fPointsToAdd = S*samplingDensity;
+		unsigned pointsToAdd = static_cast<unsigned>(fPointsToAdd);
+
+        //if the face area is smaller than the surface/random point
+		if (pointsToAdd == 0)
+		{
+			//we add a point with the same probability as its (relative) area
+			if (static_cast<double>(rand()) <= fPointsToAdd * static_cast<double>(RAND_MAX))
+                pointsToAdd = 1;
+		}
+
+		if (pointsToAdd)
+		{
+			if (addedPoints + pointsToAdd >= theoricNumberOfPoints)
+			{
+				theoricNumberOfPoints+=pointsToAdd;
+				if (!sampledCloud->reserve(theoricNumberOfPoints)
+					|| (triIndices && triIndices->capacity() < theoricNumberOfPoints && !triIndices->reserve(theoricNumberOfPoints))) //not enough memory
+				{
+					delete sampledCloud;
+					sampledCloud = 0;
+					triIndices->clear();
+					break;
+				}
+			}
+
+			for (unsigned i=0; i<pointsToAdd; ++i)
+			{
+				//we generates random points as in:
+				//'Greg Turk. Generating random points in triangles. In A. S. Glassner, editor,Graphics Gems, pages 24-28. Academic Press, 1990.'
+				double x = static_cast<double>(rand())/static_cast<double>(RAND_MAX);
+				double y = static_cast<double>(rand())/static_cast<double>(RAND_MAX);
+
+				//we test if the generated point lies on the right side of (AB)
+				if (x+y > 1.0)
+				{
+                    x = 1.0-x;
+                    y = 1.0-y;
+                }
+
+				CCVector3 P = (*O) + static_cast<PointCoordinateType>(x) * u + static_cast<PointCoordinateType>(y) * v;
+
+				sampledCloud->addPoint(P);
+				if (triIndices)
+					triIndices->addElement(n);
+				++addedPoints;
+			}
+		}
+
+		if (normProgress && !normProgress->oneStep())
+			break;
+	}
+
+	if (normProgress)
+	{
+        delete normProgress;
+		normProgress = 0;
+	}
+
+	if (sampledCloud) //can be in case of memory overflow!
+	{
+		if (addedPoints)
+		{
+			sampledCloud->resize(addedPoints); //should always be ok as addedPoints<theoricNumberOfPoints
+			if (triIndices)
+				triIndices->resize(addedPoints);
+		}
+		else
+		{
+			delete sampledCloud;
+			sampledCloud = 0;
+			if (triIndices)
+				triIndices->clear();
+		}
+	}
+
+	return sampledCloud;
+}
